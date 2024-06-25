@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>eu.eureka-bpo.maven</groupId>
+	<artifactId>require-p2-artifact-checksum</artifactId>
+	<version>SNAPSHOT</version>
+	<packaging>jar</packaging>
+
+	<name>Rule to validate a P2 artifacts to match the specified checksum</name>
+	<description>Maven enforcer rule to validate a P2 artifacts to match the specified checksum</description>
+	<url>https://github.com/eureka-bpo/require-p2-artifact-checksum</url>
+
+	<scm>
+		<url>https://github.com/eureka-bpo/require-p2-artifact-checksum.git</url>
+		<connection>scm:git:https://github.com/eureka-bpo/require-p2-artifact-checksum.git</connection>
+		<developerConnection>scm:git:git@github.com:eureka-bpo/require-p2-artifact-checksum.git</developerConnection>
+	</scm>
+
+	<issueManagement>
+		<system>GitHub</system>
+		<url>https://github.com/eureka-bpo/require-p2-artifact-checksum/issues</url>
+	</issueManagement>
+
+	<licenses>
+		<license>
+			<name>Apache License, Version 2.0</name>
+			<url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+		</license>
+	</licenses>
+
+
+	<developers>
+		<developer>
+			<email>support@eureka-bpo.eu</email>
+			<roles>
+				<role>Developer</role>
+			</roles>
+		</developer>
+	</developers>
+
+	<properties>
+		<java.version>1.8</java.version>
+		<maven.compiler.source>${java.version}</maven.compiler.source>
+		<maven.compiler.target>${java.version}</maven.compiler.target>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+		<enforcer-api.version>3.2.1</enforcer-api.version>
+		<maven.version>3.6.3</maven.version>
+	</properties>
+
+	<dependencies>
+		<dependency>
+			<groupId>org.apache.maven</groupId>
+			<artifactId>maven-plugin-api</artifactId>
+			<version>${maven.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.maven</groupId>
+			<artifactId>maven-core</artifactId>
+			<version>${maven.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.maven.enforcer</groupId>
+			<artifactId>enforcer-api</artifactId>
+			<version>${enforcer-api.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>biz.aQute.bnd</groupId>
+			<artifactId>biz.aQute.repository</artifactId>
+			<version>6.4.1</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.slf4j</groupId>
+					<artifactId>slf4j-api</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<version>1.18.32</version>
+			<scope>provided</scope>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.11.0</version>
+			</plugin>
+			<plugin>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<version>3.7.1</version>
+				<executions>
+					<execution>
+						<id>copy-dependencies</id>
+						<phase>package</phase>
+						<goals>
+							<goal>unpack-dependencies</goal>
+						</goals>
+						<configuration>
+							<excludeScope>provided</excludeScope>
+							<outputDirectory>${project.build.directory}/lib</outputDirectory>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<version>3.7.1</version>
+				<executions>
+					<execution>
+						<id>make-assembly</id>
+						<phase>package</phase>
+						<goals>
+							<goal>single</goal>
+						</goals>
+						<configuration>
+							<descriptors>
+								<descriptor>jar-with-compile-dependencies.xml</descriptor>
+							</descriptors>
+							<appendAssemblyId>false</appendAssemblyId>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<artifactId>maven-invoker-plugin</artifactId>
+				<version>3.6.0</version>
+				<configuration>
+					<cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
+					<showErrors>true</showErrors>
+					<streamLogs>false</streamLogs>
+					<debug>true</debug>
+					<settingsFile>src/it/settings.xml</settingsFile>
+					<localRepositoryPath>${project.build.directory}/local-repo</localRepositoryPath>
+					<mavenOpts>-Djava.io.tmpdir=${project.build.directory}/it</mavenOpts>
+					<properties>
+						<maven.compiler.source>${maven.compiler.source}</maven.compiler.source>
+						<maven.compiler.target>${maven.compiler.target}</maven.compiler.target>
+						<require-p2-artifact-checksum.version>${project.version}</require-p2-artifact-checksum.version>
+					</properties>
+				</configuration>
+				<executions>
+					<execution>
+						<id>run-integration-tests</id>
+						<phase>integration-test</phase>
+						<goals>
+							<goal>install</goal>
+							<goal>run</goal>
+							<goal>verify</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+</project>
