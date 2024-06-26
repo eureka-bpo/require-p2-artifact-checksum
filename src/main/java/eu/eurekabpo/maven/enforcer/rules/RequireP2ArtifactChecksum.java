@@ -80,7 +80,49 @@ public class RequireP2ArtifactChecksum extends AbstractEnforcerRule {
         ArtifactProvider provider = new P2Impl(new Unpack200(), new HttpClient(), URI.create(originalUrl), Processor.getPromiseFactory());
         return provider.getBundles();
     }
-    
+
+    private MessageDigest sha512Digest;
+    private boolean sha512DigestInitialized;
+    private MessageDigest getSha512MessageDigest() {
+        if (!sha512DigestInitialized) {
+            try {
+                sha512Digest = MessageDigest.getInstance("SHA-512");
+            } catch (NoSuchAlgorithmException e) {
+                getLog().warn("Calculating SHA-512 checksum is not possible: " + e.getMessage());
+            }
+            sha512DigestInitialized = true;
+        }
+        return sha512Digest;
+    }
+
+    private MessageDigest sha256Digest;
+    private boolean sha256DigestInitialized;
+    private MessageDigest getSha256MessageDigest() {
+        if (!sha256DigestInitialized) {
+            try {
+                sha256Digest = MessageDigest.getInstance("SHA-256");
+            } catch (NoSuchAlgorithmException e) {
+                getLog().warn("Calculating SHA-256 checksum is not possible: " + e.getMessage());
+            }
+            sha256DigestInitialized = true;
+        }
+        return sha256Digest;
+    }
+
+    private MessageDigest sha1Digest;
+    private boolean sha1DigestInitialized;
+    private MessageDigest getSha1MessageDigest() {
+        if (!sha1DigestInitialized) {
+            try {
+                sha1Digest = MessageDigest.getInstance("SHA-1");
+            } catch (NoSuchAlgorithmException e) {
+                getLog().warn("Calculating SHA-1 checksum is not possible: " + e.getMessage());
+            }
+            sha1DigestInitialized = true;
+        }
+        return sha1Digest;
+    }
+
     private MessageDigest md5Digest;
     private boolean md5DigestInitialized;
     private MessageDigest getMd5MessageDigest() {
@@ -140,7 +182,34 @@ public class RequireP2ArtifactChecksum extends AbstractEnforcerRule {
                 }
                 try {
                     MessageDigest digest;
-                    if (p2Artifact.md5 != null && (digest = getMd5MessageDigest()) != null) {
+                    if (p2Artifact.sha512 != null && (digest = getSha512MessageDigest()) != null) {
+                        String calculatedChecksum = calculateChecksum(digest, mavenFileContent);
+                        if (!p2Artifact.sha512.equalsIgnoreCase(calculatedChecksum)) {
+                            throw new EnforcerRuleException("Checksums are not equal for artifact " + 
+                                mavenArtifact.getGroupId() + ":" + artifactId + ":" + artifactVersion + 
+                                ". Original SHA-512 is " + p2Artifact.sha512 +
+                                ", but calculated SHA-512 is " + calculatedChecksum);
+                        }
+                        getLog().debug(() -> "SHA-512 has compared and found equal");
+                    } else if (p2Artifact.sha256 != null && (digest = getSha256MessageDigest()) != null) {
+                        String calculatedChecksum = calculateChecksum(digest, mavenFileContent);
+                        if (!p2Artifact.sha256.equalsIgnoreCase(calculatedChecksum)) {
+                            throw new EnforcerRuleException("Checksums are not equal for artifact " + 
+                                mavenArtifact.getGroupId() + ":" + artifactId + ":" + artifactVersion + 
+                                ". Original SHA-256 is " + p2Artifact.sha256 +
+                                ", but calculated SHA-256 is " + calculatedChecksum);
+                        }
+                        getLog().debug(() -> "SHA-256 has compared and found equal");
+                    } else if (p2Artifact.sha1 != null && (digest = getSha1MessageDigest()) != null) {
+                        String calculatedChecksum = calculateChecksum(digest, mavenFileContent);
+                        if (!p2Artifact.sha1.equalsIgnoreCase(calculatedChecksum)) {
+                            throw new EnforcerRuleException("Checksums are not equal for artifact " + 
+                                mavenArtifact.getGroupId() + ":" + artifactId + ":" + artifactVersion + 
+                                ". Original SHA-1 is " + p2Artifact.sha1 +
+                                ", but calculated SHA-1 is " + calculatedChecksum);
+                        }
+                        getLog().debug(() -> "SHA-1 has compared and found equal");
+                    } else if (p2Artifact.md5 != null && (digest = getMd5MessageDigest()) != null) {
                         String calculatedChecksum = calculateChecksum(digest, mavenFileContent);
                         if (!p2Artifact.md5.equalsIgnoreCase(calculatedChecksum)) {
                             throw new EnforcerRuleException("Checksums are not equal for artifact " + 

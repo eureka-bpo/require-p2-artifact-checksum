@@ -71,7 +71,7 @@
 		<dependency>
 			<groupId>biz.aQute.bnd</groupId>
 			<artifactId>biz.aQute.repository</artifactId>
-			<version>6.4.1</version>
+			<version>6.4.1-eureka-bpo</version>
 			<exclusions>
 				<exclusion>
 					<groupId>org.slf4j</groupId>
