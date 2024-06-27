@@ -43,6 +43,7 @@
 		<maven.compiler.source>${java.version}</maven.compiler.source>
 		<maven.compiler.target>${java.version}</maven.compiler.target>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<nexus.host>s01.oss.sonatype.org</nexus.host>
 
 		<enforcer-api.version>3.2.1</enforcer-api.version>
 		<maven.version>3.6.3</maven.version>
