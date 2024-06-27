@@ -157,6 +157,8 @@ public class RequireP2ArtifactChecksum extends AbstractEnforcerRule {
 
     private void validateChecksums(Collection<org.apache.maven.artifact.Artifact> mavenArtifacts, List<Artifact> p2Artifacts) throws EnforcerRuleException {
         List<EnforcerRuleException> exceptions = new ArrayList<>();
+        int checked = 0;
+        int unchecked = 0;
         for (org.apache.maven.artifact.Artifact mavenArtifact : mavenArtifacts) {
             String artifactId = mavenArtifact.getArtifactId();
             String artifactVersion = mavenArtifact.getVersion();
@@ -190,6 +192,7 @@ public class RequireP2ArtifactChecksum extends AbstractEnforcerRule {
                                 ". Original SHA-512 is " + p2Artifact.sha512 +
                                 ", but calculated SHA-512 is " + calculatedChecksum);
                         }
+                        checked++;
                         getLog().debug(() -> "SHA-512 has compared and found equal");
                     } else if (p2Artifact.sha256 != null && (digest = getSha256MessageDigest()) != null) {
                         String calculatedChecksum = calculateChecksum(digest, mavenFileContent);
@@ -199,6 +202,7 @@ public class RequireP2ArtifactChecksum extends AbstractEnforcerRule {
                                 ". Original SHA-256 is " + p2Artifact.sha256 +
                                 ", but calculated SHA-256 is " + calculatedChecksum);
                         }
+                        checked++;
                         getLog().debug(() -> "SHA-256 has compared and found equal");
                     } else if (p2Artifact.sha1 != null && (digest = getSha1MessageDigest()) != null) {
                         String calculatedChecksum = calculateChecksum(digest, mavenFileContent);
@@ -208,6 +212,7 @@ public class RequireP2ArtifactChecksum extends AbstractEnforcerRule {
                                 ". Original SHA-1 is " + p2Artifact.sha1 +
                                 ", but calculated SHA-1 is " + calculatedChecksum);
                         }
+                        checked++;
                         getLog().debug(() -> "SHA-1 has compared and found equal");
                     } else if (p2Artifact.md5 != null && (digest = getMd5MessageDigest()) != null) {
                         String calculatedChecksum = calculateChecksum(digest, mavenFileContent);
@@ -217,10 +222,12 @@ public class RequireP2ArtifactChecksum extends AbstractEnforcerRule {
                                 ". Original MD5 is " + p2Artifact.md5 +
                                 ", but calculated MD5 is " + calculatedChecksum);
                         }
+                        checked++;
                         getLog().debug(() -> "MD5 has compared and found equal");
                     } else {
+                        unchecked++;
                         getLog().info("Cannot check checksum for artifact " +
-                                        String.join(":", mavenArtifact.getGroupId(), artifactId, artifactVersion));
+                            String.join(":", mavenArtifact.getGroupId(), artifactId, artifactVersion));
                     }
                 } catch (EnforcerRuleException e) {
                     exceptions.add(e);
@@ -231,8 +238,12 @@ public class RequireP2ArtifactChecksum extends AbstractEnforcerRule {
             }
         }
         if (!exceptions.isEmpty()) {
-            String message = exceptions.stream().map(ex -> ex.getMessage()).collect(Collectors.joining(System.lineSeparator()));
+            String message = "For " + exceptions.size() + " artifacts checksums are not equal: " + System.lineSeparator() +
+                exceptions.stream().map(ex -> ex.getMessage()).collect(Collectors.joining(System.lineSeparator()));
             throw new EnforcerRuleException(message);
+        } else {
+            getLog().info("Checksums analysis has been correctly finished: " + checked + " artifacts have correct checksums, " +
+                unchecked + " artifacts have no checksum information");
         }
     }
 

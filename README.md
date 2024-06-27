@@ -31,7 +31,6 @@ from pom.xml:
 				<executions>
 					<execution>
 						<id>enforce-p2-checksums</id>
-						<phase>package</phase>
 						<goals>
 							<goal>enforce</goal>
 						</goals>
