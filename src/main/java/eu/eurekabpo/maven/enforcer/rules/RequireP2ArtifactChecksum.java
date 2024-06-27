@@ -47,7 +47,7 @@ public class RequireP2ArtifactChecksum extends AbstractEnforcerRule {
     @Override
     public void execute() throws EnforcerRuleException {
         if (this.originalUrl == null) {
-            throw new EnforcerRuleError("P2 Repository URL unspecified");
+            throw new EnforcerRuleError("P2 Original Repository URL unspecified");
         }
         if (this.repositoryId == null) {
             throw new EnforcerRuleError("Repository id unspecified");
