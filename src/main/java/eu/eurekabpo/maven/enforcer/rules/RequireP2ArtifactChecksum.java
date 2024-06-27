@@ -10,6 +10,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -62,15 +63,21 @@ public class RequireP2ArtifactChecksum extends AbstractEnforcerRule {
             getLog().debug(() -> "Maven project has " + mavenArtifacts.size() + " artifacts: " +
                 mavenArtifacts.stream().map(a -> String.join(":", a.getGroupId(),
                     a.getArtifactId(), a.getVersion())).collect(Collectors.joining(", ")));
+            List<Artifact> tmpP2Artifacts = Collections.emptyList();
             try {
-                List<Artifact> p2Artifacts = getP2ArtifactList();
-                getLog().debug(() -> "P2 Repository (" + originalUrl + ") has " + p2Artifacts.size() +
-                    " artifacts: " + p2Artifacts.stream().map(a -> String.join(":", a.id, a.version.toString()))
-                    .collect(Collectors.joining(", ")));
-                validateChecksums(mavenArtifacts, p2Artifacts);
+                tmpP2Artifacts = getP2ArtifactList();
+                if (tmpP2Artifacts == null || tmpP2Artifacts.isEmpty()) {
+                    throw new Exception("P2 artifacts are not found on URL " + originalUrl);
+                }
             } catch (Exception e) {
-                getLog().error("Error has acquired: " + e.getMessage());
+                getLog().error("Error has occured: " + e.getMessage());
+                throw new EnforcerRuleError("Error has occured while reading artifacts list from " + originalUrl);
             }
+            List<Artifact> p2Artifacts = tmpP2Artifacts;
+            getLog().debug(() -> "P2 Repository (" + originalUrl + ") has " + p2Artifacts.size() +
+                " artifacts: " + p2Artifacts.stream().map(a -> String.join(":", a.id, a.version.toString()))
+                .collect(Collectors.joining(", ")));
+            validateChecksums(mavenArtifacts, p2Artifacts);
         } else {
             getLog().debug(() -> "There are no dependencies from P2 Repository id " + repositoryId);
         }
