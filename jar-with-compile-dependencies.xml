@@ -11,6 +11,9 @@
     <fileSet>
       <directory>${project.build.directory}/lib</directory>
       <outputDirectory>/</outputDirectory>
+      <excludes>
+        <exclude>OSGI-OPT/**</exclude>
+      </excludes>
     </fileSet>
     <fileSet>
       <directory>${project.build.directory}/classes</directory>
