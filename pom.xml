@@ -7,8 +7,7 @@
 	<version>SNAPSHOT</version>
 	<packaging>jar</packaging>
 
-	<name>Rule to validate a P2 artifacts to match the specified checksum</name>
-	<description>Maven enforcer rule to validate a P2 artifacts to match the specified checksum</description>
+	<name>require-p2-artifact-checksum - Maven Enforcer Rule for P2 artifacts validation</name>
 	<url>https://github.com/eureka-bpo/require-p2-artifact-checksum</url>
 
 	<scm>
