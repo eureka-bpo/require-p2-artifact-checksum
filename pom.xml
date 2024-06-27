@@ -8,6 +8,7 @@
 	<packaging>jar</packaging>
 
 	<name>require-p2-artifact-checksum - Maven Enforcer Rule for P2 artifacts validation</name>
+	<description>require-p2-artifact-checksum - Maven Enforcer Rule for P2 artifacts validation</description>
 	<url>https://github.com/eureka-bpo/require-p2-artifact-checksum</url>
 
 	<scm>
