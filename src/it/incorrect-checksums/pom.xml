@@ -1,0 +1,68 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>eu.eurekabpo.maven</groupId>
+	<artifactId>test</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<packaging>jar</packaging>
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	</properties>
+
+	<dependencies>
+		<dependency>
+			<groupId>org.eclipse.ide</groupId>
+			<artifactId>org.eclipse.core.jobs</artifactId>
+			<version>3.15.0.v20230808-1403</version>
+		</dependency>
+		<dependency>
+			<groupId>commons-io</groupId>
+			<artifactId>commons-io</artifactId>
+			<version>2.16.1</version>
+		</dependency>
+	</dependencies>
+
+	<repositories>
+		<repository>
+			<id>eclipse-2023-09-broken</id>
+			<url>https://p2repository.com/mvn3/eclipse-2023-09/</url>
+		</repository>
+	</repositories>
+
+	<build>
+		<plugins>
+			<plugin>
+				<artifactId>maven-enforcer-plugin</artifactId>
+				<version>3.2.1</version>
+				<executions>
+					<execution>
+						<id>enforce-p2-checksums</id>
+						<phase>package</phase>
+						<goals>
+							<goal>enforce</goal>
+						</goals>
+						<configuration>
+							<rules>
+								<requireP2ArtifactChecksum>
+									<repositoryId>eclipse-2023-09-broken</repositoryId>
+									<originalUrl>file://${project.basedir}/</originalUrl>
+								</requireP2ArtifactChecksum>
+							</rules>
+							<fail>true</fail>
+						</configuration>
+					</execution>
+				</executions>
+				<dependencies>
+					<dependency>
+						<groupId>eu.eureka-bpo.maven</groupId>
+						<artifactId>require-p2-artifact-checksum</artifactId>
+						<version>${require-p2-artifact-checksum.version}</version>
+					</dependency>
+				</dependencies>
+			</plugin>
+		</plugins>
+	</build>
+</project>

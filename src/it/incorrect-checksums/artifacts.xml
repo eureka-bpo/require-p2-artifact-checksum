@@ -1,0 +1,58 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<?artifactRepository version='1.1.0'?>
+<repository name='2023-09/202309131000' type='org.eclipse.equinox.p2.artifact.repository.simpleRepository' version='1.0.0'>
+  <properties size='5'>
+    <property name='p2.compressed' value='true'/>
+    <property name='publishPackFilesAsSiblings' value='true'/>
+    <property name='p2.timestamp' value='1694069284339'/>
+    <property name='pgp.publicKeys' value='-----BEGIN PGP MESSAGE-----&#10;&#10;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&#10;=GiWN&#10;-----END PGP MESSAGE-----&#10;'/>
+    <property name='p2.mirrorsURL' value='https://www.eclipse.org/downloads/download.php?format=xml&amp;file=/releases/2023-09/202309131000'/>
+    <property name='p2.statsURI' value='https://download.eclipse.org/stats/releases/2023-09'/>
+  </properties>
+  <mappings size='3'>
+    <rule filter='(&amp; (classifier=osgi.bundle))' output='${repoUrl}/plugins/${id}_${version}.jar'/>
+    <rule filter='(&amp; (classifier=binary))' output='${repoUrl}/binary/${id}_${version}'/>
+    <rule filter='(&amp; (classifier=org.eclipse.update.feature))' output='${repoUrl}/features/${id}_${version}.jar'/>
+  </mappings>
+  <artifacts size='3'>
+    <artifact classifier='osgi.bundle' id='org.eclipse.equinox.common' version='3.18.100.v20230730-1117'>
+      <properties size='9'>
+        <property name='artifact.size' value='154149'/>
+        <property name='download.size' value='154149'/>
+        <property name='download.checksum.sha-512' value='55cbf76e6f9cd0a8c5fd4346aa1e837fcd182305166db88c5f683ff9f473c14d87e9ca6f98452c8ff5affc470dfdad738f1a0b2538ada19526738b5acab7bc22'/>
+        <property name='download.checksum.sha-256' value='7c15db46dda5f6f1ff9ecac10eb6ffa9ed1cbd0ed5e6996cb95f0e390902700e'/>
+        <property name='maven-groupId' value='org.eclipse.equinox'/>
+        <property name='maven-artifactId' value='org.eclipse.equinox.common'/>
+        <property name='maven-version' value='3.18.100-SNAPSHOT'/>
+        <property name='maven-type' value='eclipse-plugin'/>
+        <property name='download.stats' value='org.eclipse.equinox.common/3.18.100.v20230730-1117'/>
+      </properties>
+    </artifact>
+    <artifact classifier='osgi.bundle' id='org.eclipse.osgi' version='3.18.500.v20230801-1826'>
+      <properties size='9'>
+        <property name='artifact.size' value='1541578'/>
+        <property name='download.size' value='1541578'/>
+        <property name='download.checksum.sha-512' value='53be6b82cf9e48cff956a45ddc1a481e80ec9e65c0c41fa888590a684d0d2dc8763e64a78490b1dd881d769ce58f8f06c7e18b97994503ec5acb6534f6341b0d'/>
+        <property name='download.checksum.sha-256' value='80b275d58379723b291ea650249cc3809c8f10b34f78aaf988132cd6d434ab4e'/>
+        <property name='maven-groupId' value='org.eclipse.osgi'/>
+        <property name='maven-artifactId' value='org.eclipse.osgi'/>
+        <property name='maven-version' value='3.18.500-SNAPSHOT'/>
+        <property name='maven-type' value='eclipse-plugin'/>
+        <property name='download.stats' value='org.eclipse.osgi/3.18.500.v20230801-1826'/>
+      </properties>
+    </artifact>
+    <artifact classifier='osgi.bundle' id='org.eclipse.core.jobs' version='3.15.0.v20230808-1403'>
+      <properties size='9'>
+        <property name='artifact.size' value='118491'/>
+        <property name='download.size' value='118491'/>
+        <property name='download.checksum.sha-512' value='976bf04701fec8b7f4ceacd378b6074d25ca085c344f12b9cdb59cc384756530ede6bea3990ad9befc582c89bc76680453fabbcee94509e7c5d7f0582e8da41a'/>
+        <property name='download.checksum.sha-256' value='857df690c6424a6558b5c96732958f03b9c209258562caf93d9fcbc13242fa11'/>
+        <property name='maven-groupId' value='org.eclipse.platform'/>
+        <property name='maven-artifactId' value='org.eclipse.core.jobs'/>
+        <property name='maven-version' value='3.15.0-SNAPSHOT'/>
+        <property name='maven-type' value='eclipse-plugin'/>
+        <property name='download.stats' value='org.eclipse.core.jobs/3.15.0.v20230808-1403'/>
+      </properties>
+    </artifact>
+  </artifacts>
+</repository>
