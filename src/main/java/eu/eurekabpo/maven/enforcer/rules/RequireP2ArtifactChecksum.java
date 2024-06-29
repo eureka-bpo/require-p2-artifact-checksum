@@ -108,12 +108,13 @@ public class RequireP2ArtifactChecksum extends AbstractEnforcerRule {
     }
 
     @SuppressWarnings( "serial" )
-    private static Map<Function<Artifact, String>, String> artifactChecksumProperty2Algorithm = new LinkedHashMap<Function<Artifact, String>, String>() {{
-        this.put(a -> a.sha512, "SHA-512");
-        this.put(a -> a.sha256, "SHA-256");
-        this.put(a -> a.sha1,   "SHA-1");
-        this.put(a -> a.md5,    "MD5");
-    }};
+    private static final Map<Function<Artifact, String>, String> artifactChecksumProperty2Algorithm =
+        Collections.unmodifiableMap(new LinkedHashMap<Function<Artifact, String>, String>() {{
+            this.put(a -> a.sha512, "SHA-512");
+            this.put(a -> a.sha256, "SHA-256");
+            this.put(a -> a.sha1,   "SHA-1");
+            this.put(a -> a.md5,    "MD5");
+        }});
 
     private void validateChecksums(Collection<org.apache.maven.artifact.Artifact> mavenArtifacts, List<Artifact> p2Artifacts) throws EnforcerRuleException {
         List<EnforcerRuleException> exceptions = new ArrayList<>();
