@@ -29,10 +29,17 @@ import aQute.p2.provider.P2Impl;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.io.FileUtils;
+import org.apache.maven.RepositoryUtils;
 import org.apache.maven.enforcer.rule.api.AbstractEnforcerRule;
 import org.apache.maven.enforcer.rule.api.EnforcerRuleError;
 import org.apache.maven.enforcer.rule.api.EnforcerRuleException;
+import org.apache.maven.execution.MavenSession;
 import org.apache.maven.project.MavenProject;
+import org.eclipse.aether.RepositorySystem;
+import org.eclipse.aether.repository.RemoteRepository;
+import org.eclipse.aether.resolution.ArtifactRequest;
+import org.eclipse.aether.resolution.ArtifactResolutionException;
+import org.eclipse.aether.resolution.ArtifactResult;
 
 /**
  * Rule to validate a p2 artifacts to match the specified checksum.
@@ -47,6 +54,10 @@ public class RequireP2ArtifactChecksum extends AbstractEnforcerRule {
     private String originalUrl;
     @Inject
     private MavenProject project;
+    @Inject
+    private MavenSession session;
+    @Inject
+    private RepositorySystem repositorySystem;
 
     @Override
     public void execute() throws EnforcerRuleException {
@@ -63,27 +74,47 @@ public class RequireP2ArtifactChecksum extends AbstractEnforcerRule {
         }
 
         Set<org.apache.maven.artifact.Artifact> mavenArtifacts = project.getArtifacts();
-        if (!mavenArtifacts.isEmpty()) {
-            getLog().debug(() -> "Maven project has " + mavenArtifacts.size() + " artifacts: " +
-                mavenArtifacts.stream().map(this::toString).collect(Collectors.joining(", ")));
-            List<Artifact> tmpP2Artifacts = Collections.emptyList();
-            try {
-                tmpP2Artifacts = getP2ArtifactList();
-                if (tmpP2Artifacts == null || tmpP2Artifacts.isEmpty()) {
-                    throw new Exception("P2 artifacts are not found on URL " + originalUrl);
-                }
-            } catch (Exception e) {
-                getLog().error("Error has occured: " + e.getMessage());
-                throw new EnforcerRuleError("Error has occured while reading artifacts list from " + originalUrl);
-            }
-            List<Artifact> p2Artifacts = tmpP2Artifacts;
-            getLog().debug(() -> "P2 Repository (" + originalUrl + ") has " + p2Artifacts.size() +
-                " artifacts: " + p2Artifacts.stream().map(this::toString)
-                .collect(Collectors.joining(", ")));
-            validateMavenArtifacts(mavenArtifacts, p2Artifacts);
-        } else {
-            getLog().debug(() -> "There are no dependencies from P2 Repository id " + repositoryId);
+        if (mavenArtifacts.isEmpty()) {
+            getLog().debug(() -> "Project has no dependencies");
+            return;
         }
+        Collection<org.apache.maven.artifact.Artifact> mavenArtifactsFromP2Repository = filterMavenArtifacts(mavenArtifacts);
+        if (mavenArtifactsFromP2Repository.isEmpty()) {
+            getLog().debug(() -> "There are no dependencies from P2 Repository " + repositoryId);
+            return;
+        }
+        getLog().debug(() -> "Maven project has " + mavenArtifactsFromP2Repository.size() + " artifacts from P2 repository " +
+            repositoryId + ": " + mavenArtifactsFromP2Repository.stream().map(this::toString).collect(Collectors.joining(", ")));
+        List<Artifact> tmpP2Artifacts = Collections.emptyList();
+        try {
+            tmpP2Artifacts = getP2ArtifactList();
+            if (tmpP2Artifacts == null || tmpP2Artifacts.isEmpty()) {
+                throw new Exception("P2 artifacts are not found on URL " + originalUrl);
+            }
+        } catch (Exception e) {
+            getLog().error("Error has occured: " + e.getMessage());
+            throw new EnforcerRuleError("Error has occured while reading artifacts list from " + originalUrl);
+        }
+        List<Artifact> p2Artifacts = tmpP2Artifacts;
+        getLog().debug(() -> "P2 Repository (" + originalUrl + ") has " + p2Artifacts.size() +
+            " artifacts: " + p2Artifacts.stream().map(this::toString)
+            .collect(Collectors.joining(", ")));
+        validateMavenArtifacts(mavenArtifactsFromP2Repository, p2Artifacts);
+    }
+
+    private Collection<org.apache.maven.artifact.Artifact> filterMavenArtifacts(Collection<org.apache.maven.artifact.Artifact> srcArtifacts) {
+        Collection<org.apache.maven.artifact.Artifact> fromP2 = new ArrayList<>();
+        List<RemoteRepository> repository = project.getRemoteProjectRepositories().stream().filter(repo -> repositoryId.equals(repo.getId())).collect(Collectors.toList());
+        srcArtifacts.forEach( srcArtifact -> {
+            ArtifactRequest request = new ArtifactRequest(RepositoryUtils.toArtifact(srcArtifact), repository, null);
+            try {
+                ArtifactResult result = repositorySystem.resolveArtifact(session.getRepositorySession(), request);
+                fromP2.add(RepositoryUtils.toArtifact(result.getArtifact()));
+            } catch (ArtifactResolutionException e) {
+                getLog().debug(() -> "Maven artifact " + toString(srcArtifact) + " has not found in repository " + repositoryId);
+            }
+        });
+        return fromP2;
     }
 
     private List<Artifact> getP2ArtifactList() throws Exception {
