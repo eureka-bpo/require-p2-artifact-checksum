@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -64,8 +65,7 @@ public class RequireP2ArtifactChecksum extends AbstractEnforcerRule {
         Set<org.apache.maven.artifact.Artifact> mavenArtifacts = project.getArtifacts();
         if (!mavenArtifacts.isEmpty()) {
             getLog().debug(() -> "Maven project has " + mavenArtifacts.size() + " artifacts: " +
-                mavenArtifacts.stream().map(a -> String.join(":", a.getGroupId(),
-                    a.getArtifactId(), a.getVersion())).collect(Collectors.joining(", ")));
+                mavenArtifacts.stream().map(this::toString).collect(Collectors.joining(", ")));
             List<Artifact> tmpP2Artifacts = Collections.emptyList();
             try {
                 tmpP2Artifacts = getP2ArtifactList();
@@ -78,9 +78,9 @@ public class RequireP2ArtifactChecksum extends AbstractEnforcerRule {
             }
             List<Artifact> p2Artifacts = tmpP2Artifacts;
             getLog().debug(() -> "P2 Repository (" + originalUrl + ") has " + p2Artifacts.size() +
-                " artifacts: " + p2Artifacts.stream().map(a -> String.join(":", a.id, a.version.toString()))
+                " artifacts: " + p2Artifacts.stream().map(this::toString)
                 .collect(Collectors.joining(", ")));
-            validateChecksums(mavenArtifacts, p2Artifacts);
+            validateMavenArtifacts(mavenArtifacts, p2Artifacts);
         } else {
             getLog().debug(() -> "There are no dependencies from P2 Repository id " + repositoryId);
         }
@@ -93,9 +93,8 @@ public class RequireP2ArtifactChecksum extends AbstractEnforcerRule {
 
     private String calculateChecksum(String algorithm, byte[] mavenFileContent) throws NoSuchAlgorithmException {
         MessageDigest digest = MessageDigest.getInstance(algorithm);
-        byte[] digestBytes = new byte[0];
         digest.update(mavenFileContent);
-        digestBytes = digest.digest();
+        byte[] digestBytes = digest.digest();
         return bytesToString(digestBytes);
     }
 
@@ -116,74 +115,94 @@ public class RequireP2ArtifactChecksum extends AbstractEnforcerRule {
             this.put(a -> a.md5,    "MD5");
         }});
 
-    private void validateChecksums(Collection<org.apache.maven.artifact.Artifact> mavenArtifacts, List<Artifact> p2Artifacts) throws EnforcerRuleException {
-        List<EnforcerRuleException> exceptions = new ArrayList<>();
-        int checked = 0;
-        int unchecked = 0;
-        outer: for (org.apache.maven.artifact.Artifact mavenArtifact : mavenArtifacts) {
-            String artifactId = mavenArtifact.getArtifactId();
-            String artifactVersion = mavenArtifact.getVersion();
-            File mavenFile = mavenArtifact.getFile();
-            if (mavenFile == null || !mavenFile.exists()) {
-                getLog().info(() -> "Maven artifact " + String.join(":", artifactId, artifactVersion) + 
-                    " file is not found and cannot be checked");
-                continue;
-            }
-            Artifact p2Artifact = p2Artifacts.parallelStream()
-                .filter(p2a -> Objects.equals(artifactId, p2a.id) && Objects.equals(artifactVersion, p2a.version.toString()))
-                .findAny().orElse(null);
-            if (p2Artifact != null) {
-                getLog().debug(() -> "For Maven artifact " + String.join(":", mavenArtifact.getGroupId(), mavenArtifact.getArtifactId(), mavenArtifact.getVersion()) + 
-                    " P2 artifact " + String.join(":", p2Artifact.id, p2Artifact.version.toString()) + " has found");
-                byte[] mavenFileContent;
-                try {
-                    mavenFileContent = FileUtils.readFileToByteArray(mavenFile);
-                } catch (IOException e) {
-                    getLog().warn(() -> "Error has acquired while reading file " + mavenFile.getAbsolutePath() + " of Maven artifact " +
-                        String.join(":", mavenArtifact.getGroupId(), mavenArtifact.getArtifactId(), mavenArtifact.getVersion()));
-                    continue;
+    private void validateMavenArtifacts(Collection<org.apache.maven.artifact.Artifact> mavenArtifacts, List<Artifact> p2Artifacts) throws EnforcerRuleException {
+        List<EnforcerRuleException> exceptions = Collections.synchronizedList(new ArrayList<>());
+        AtomicInteger checked = new AtomicInteger();
+        AtomicInteger unchecked = new AtomicInteger();
+        mavenArtifacts.forEach(mavenArtifact -> {
+            try {
+                Boolean validationResult = validateMavenArtifact(mavenArtifact, p2Artifacts);
+                if (validationResult != null && validationResult.booleanValue()) {
+                    checked.incrementAndGet();
+                } else if (validationResult != null && !validationResult.booleanValue()) {
+                    unchecked.incrementAndGet();
                 }
-                try {
-                    for (Map.Entry<Function<Artifact, String>, String> entry : artifactChecksumProperty2Algorithm.entrySet()) {
-                        String p2ArtifactChecksum = entry.getKey().apply(p2Artifact);
-                        if (p2ArtifactChecksum != null) {
-                            String calculatedChecksum = calculateChecksum(entry.getValue(), mavenFileContent);
-                            if (!p2ArtifactChecksum.equalsIgnoreCase(calculatedChecksum)) {
-                                throw new EnforcerRuleException("Checksums are not equal for artifact " + 
-                                    mavenArtifact.getGroupId() + ":" + artifactId + ":" + artifactVersion + 
-                                    ". Original " + entry.getValue() + " is " + p2ArtifactChecksum +
-                                    ", but calculated " + entry.getValue() + " is " + calculatedChecksum);
-                            }
-                            checked++;
-                            getLog().debug(() -> entry.getValue() + " has compared and found equal");
-                            continue outer;
-                        }
-                    }
-                    unchecked++;
-                    getLog().info("Cannot check checksum for artifact " +
-                        String.join(":", mavenArtifact.getGroupId(), artifactId, artifactVersion) + 
-                        " while p2 artifact has no checksum info");
-                } catch (EnforcerRuleException e) {
-                    exceptions.add(e);
-                } catch (NoSuchAlgorithmException e) {
-                    unchecked++;
-                    getLog().info(() -> "Cannot check checksum for artifact " +
-                        String.join(":", mavenArtifact.getGroupId(), artifactId, artifactVersion) +
-                        " while error has occured: " + e.getMessage());
-                }
-            } else {
-                getLog().info("Cannot found p2 repository data for artifact " +
-                    String.join(":", mavenArtifact.getGroupId(), artifactId, artifactVersion));
+            } catch (EnforcerRuleException e) {
+                exceptions.add(e);
             }
-        }
+        });
         if (!exceptions.isEmpty()) {
             String message = "For " + exceptions.size() + " artifacts checksums are not equal: " + System.lineSeparator() +
                 exceptions.stream().map(ex -> ex.getMessage()).collect(Collectors.joining(System.lineSeparator()));
             throw new EnforcerRuleException(message);
         } else {
-            getLog().info("Checksums analysis has been correctly finished: " + checked + " artifacts have correct checksums, " +
-                unchecked + " artifacts have no checksum information");
+            getLog().info("Checksums analysis has been correctly finished: " + checked.get() + " artifacts have correct checksums, " +
+                unchecked.get() + " artifacts have no checksum information");
         }
+    }
+
+    /**
+     * @return
+     *     - true if checksum is valid,
+     *     - false if checksum is not valid,
+     *     - null if checksum validation is impossible
+     * */
+    private Boolean validateMavenArtifact(org.apache.maven.artifact.Artifact mavenArtifact, List<Artifact> p2Artifacts) throws EnforcerRuleException {
+        File mavenFile = mavenArtifact.getFile();
+        if (mavenFile == null || !mavenFile.exists()) {
+            getLog().info(() -> "Maven artifact " + toString(mavenArtifact) + " file is not found and cannot be checked");
+            return null;
+        }
+        String artifactId = mavenArtifact.getArtifactId();
+        String artifactVersion = mavenArtifact.getVersion();
+        Artifact p2Artifact = p2Artifacts.parallelStream()
+            .filter(p2a -> Objects.equals(artifactId, p2a.id) && Objects.equals(artifactVersion, p2a.version.toString()))
+            .findAny().orElse(null);
+        if (p2Artifact != null) {
+            getLog().debug(() -> "For Maven artifact " + toString(mavenArtifact) + " P2 artifact " + toString(p2Artifact) + " has found");
+            byte[] mavenFileContent;
+            try {
+                mavenFileContent = FileUtils.readFileToByteArray(mavenFile);
+            } catch (IOException e) {
+                getLog().warn(() -> "Error has acquired while reading file " + mavenFile.getAbsolutePath() + " of Maven artifact " +
+                    toString(mavenArtifact));
+                return null;
+            }
+            try {
+                for (Map.Entry<Function<Artifact, String>, String> entry : artifactChecksumProperty2Algorithm.entrySet()) {
+                    String p2ArtifactChecksum = entry.getKey().apply(p2Artifact);
+                    if (p2ArtifactChecksum != null) {
+                        String calculatedChecksum = calculateChecksum(entry.getValue(), mavenFileContent);
+                        if (!p2ArtifactChecksum.equalsIgnoreCase(calculatedChecksum)) {
+                            throw new EnforcerRuleException("Checksums are not equal for artifact " + 
+                                mavenArtifact.getGroupId() + ":" + artifactId + ":" + artifactVersion + 
+                                ". Original " + entry.getValue() + " is " + p2ArtifactChecksum +
+                                ", but calculated " + entry.getValue() + " is " + calculatedChecksum);
+                        }
+                        getLog().debug(() -> entry.getValue() + " has compared and found equal");
+                        return true;
+                    }
+                }
+                getLog().info("Cannot check checksum for artifact " +
+                    toString(mavenArtifact) + " while p2 artifact has no checksum info");
+                return false;
+            } catch (NoSuchAlgorithmException e) {
+                getLog().info(() -> "Cannot check checksum for artifact " +
+                    toString(mavenArtifact) + " while error has occured: " + e.getMessage());
+                return false;
+            }
+        } else {
+            getLog().info("Cannot found p2 repository data for artifact " + toString(mavenArtifact));
+            return null;
+        }
+    }
+
+    private String toString(org.apache.maven.artifact.Artifact artifact) {
+        return String.join(":", artifact.getGroupId(), artifact.getArtifactId(), artifact.getVersion());
+    }
+
+    private String toString(Artifact artifact) {
+        return String.join(":", artifact.id, artifact.version.toString());
     }
 
     @Override
