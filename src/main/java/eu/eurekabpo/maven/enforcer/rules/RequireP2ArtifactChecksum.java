@@ -73,18 +73,17 @@ public class RequireP2ArtifactChecksum extends AbstractEnforcerRule {
                 project.getRepositories().stream().map( repo -> repo.getId()).collect(Collectors.toList()));
         }
 
-        Set<org.apache.maven.artifact.Artifact> mavenArtifacts = project.getArtifacts();
-        if (mavenArtifacts.isEmpty()) {
+        if (project.getArtifacts().isEmpty()) {
             getLog().debug(() -> "Project has no dependencies");
             return;
         }
-        Collection<org.apache.maven.artifact.Artifact> mavenArtifactsFromP2Repository = filterMavenArtifacts(mavenArtifacts);
-        if (mavenArtifactsFromP2Repository.isEmpty()) {
+        Collection<org.apache.maven.artifact.Artifact> mavenArtifacts = filterMavenArtifacts(project.getArtifacts());
+        if (mavenArtifacts.isEmpty()) {
             getLog().debug(() -> "There are no dependencies from P2 Repository " + repositoryId);
             return;
         }
-        getLog().debug(() -> "Maven project has " + mavenArtifactsFromP2Repository.size() + " artifacts from P2 repository " +
-            repositoryId + ": " + mavenArtifactsFromP2Repository.stream().map(this::toString).collect(Collectors.joining(", ")));
+        getLog().debug(() -> "Maven project has " + mavenArtifacts.size() + " artifacts from P2 repository " +
+            repositoryId + ": " + mavenArtifacts.stream().map(this::toString).collect(Collectors.joining(", ")));
         List<Artifact> tmpP2Artifacts = Collections.emptyList();
         try {
             tmpP2Artifacts = getP2ArtifactList();
@@ -99,7 +98,7 @@ public class RequireP2ArtifactChecksum extends AbstractEnforcerRule {
         getLog().debug(() -> "P2 Repository (" + originalUrl + ") has " + p2Artifacts.size() +
             " artifacts: " + p2Artifacts.stream().map(this::toString)
             .collect(Collectors.joining(", ")));
-        validateMavenArtifacts(mavenArtifactsFromP2Repository, p2Artifacts);
+        validateMavenArtifacts(mavenArtifacts, p2Artifacts);
     }
 
     private Collection<org.apache.maven.artifact.Artifact> filterMavenArtifacts(Collection<org.apache.maven.artifact.Artifact> srcArtifacts) {
