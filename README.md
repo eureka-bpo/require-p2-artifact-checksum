@@ -62,7 +62,7 @@ Add such declaration to your pom.xml:
         <dependency>
           <groupId>eu.eureka-bpo.maven</groupId>
           <artifactId>require-p2-artifact-checksum</artifactId>
-          <version>SNAPSHOT</version>
+          <version>1.0.1</version>
         </dependency>
       </dependencies>
     </plugin>
