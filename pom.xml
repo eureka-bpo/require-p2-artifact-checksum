@@ -165,7 +165,6 @@
 					<showErrors>true</showErrors>
 					<streamLogs>false</streamLogs>
 					<debug>true</debug>
-					<settingsFile>src/it/settings.xml</settingsFile>
 					<localRepositoryPath>${project.build.directory}/local-repo</localRepositoryPath>
 					<mavenOpts>-Djava.io.tmpdir=${project.build.directory}/it</mavenOpts>
 					<postBuildHookScript>verify</postBuildHookScript>
