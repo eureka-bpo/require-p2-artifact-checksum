@@ -9,13 +9,13 @@ import java.net.URI;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -139,10 +139,11 @@ public class RequireP2ArtifactChecksum extends AbstractEnforcerRule {
     @SuppressWarnings( "serial" )
     private static final Map<Function<Artifact, String>, String> artifactChecksumProperty2Algorithm =
         Collections.unmodifiableMap(new LinkedHashMap<Function<Artifact, String>, String>() {{
-            this.put(a -> a.sha512, "SHA-512");
-            this.put(a -> a.sha256, "SHA-256");
-            this.put(a -> a.sha1,   "SHA-1");
-            this.put(a -> a.md5,    "MD5");
+            this.put(a -> a.getProperty("download.checksum.sha-512"), "SHA-512");
+            this.put(a -> a.getProperty("download.checksum.sha-256"), "SHA-256");
+            this.put(a -> a.getProperty("download.checksum.sha-1"), "SHA-1");
+            this.put(a -> Arrays.asList(a.md5, a.getProperty("download.md5"), a.getProperty("download.checksum.md5"))
+                     .stream().filter(Objects::nonNull).findFirst().orElse(null), "MD5");
         }});
 
     private void validateMavenArtifacts(Collection<org.apache.maven.artifact.Artifact> mavenArtifacts, List<Artifact> p2Artifacts) throws EnforcerRuleException {

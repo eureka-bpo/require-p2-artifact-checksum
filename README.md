@@ -7,7 +7,7 @@ This project presents custom rule requireP2ArtifactChecksum for [maven-enforcer-
 requireP2ArtifactChecksum is meant for validation of checksums of artifacts from p2 repositories. This validation is useful, when artifacts are received indirectly from 3d-party services (like [p2repository.com](https://www.p2repository.com/)).
 
 #### Minimum requirements
-- Java 8
+- Java 17
 - Maven 3.6.3
 - Maven Enforcer Plugin 3.2.1
 
