@@ -32,7 +32,7 @@ Add such declaration to your pom.xml:
   ...
   <repository>
     <id>eclipse-2023-09</id>
-    <url>https://p2repository.com/mvn3/eclipse-2023-09/</url>
+    <url>https://p2repository.com/mvn4/eclipse-2023-09/</url>
   </repository>
   ...
 </repositories>
